@@ -12,6 +12,8 @@ import (
 	"time"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+	"artistify/internal/middleware"
+	// "example/internal/middleware"
 	// "log"
 )
 
@@ -126,7 +128,7 @@ func login(c *gin.Context) {
 
 	expires := time.Now().Add(time.Hour)
 	claims := jwt.MapClaims{
-		"user_id": id,
+		"id": id,
 		"role": role,
 		"exp": expires.Unix(),
 	}
@@ -320,20 +322,35 @@ func main() {
 
 	fmt.Println("DATABASE Successfully connected!!!")
 
-	r := gin.Default()
+	router := gin.Default()
 
-	r.LoadHTMLGlob("templates/*")
+	artist := router.Group("/artist")
+	artist.Use(middleware.AuthMiddleware())
+	artist.Use(middleware.RequireRole("artist"))
+
+	admin := router.Group("/admin")
+	admin.Use(middleware.AuthMiddleware())
+	admin.Use(middleware.RequireRole("admin"))
+
+	router.LoadHTMLGlob("templates/*")
 
 	fmt.Println("Running server at 8080...", quote.Go())
 
-	r.GET("/", home)
-	r.GET("/albums", getAlbums)
-	r.POST("/albums", addAlbum)
-	r.POST("/auth/login", login)
-	r.POST("/auth/register", register)
-	r.GET("/albums/:id", getAlbumByID)
-	r.GET("/albums/artist/:artist", getAlbumsByArtist)
-	r.PUT("/albums/:id", updateAlbumByID)
-	r.DELETE("/albums/:id", deleteAlbumByID)
-	r.Run(":8080")
+	router.GET("/", home)
+	router.POST("/auth/login", login)
+	router.POST("/auth/register", register)
+	router.GET("/albums", getAlbums)
+	router.GET("/albums/artist/:artist", getAlbumsByArtist)
+	router.GET("/albums/:id", getAlbumByID)
+	
+	artist.POST("/albums", addAlbum)
+	artist.PUT("/albums/:id", updateAlbumByID)
+	artist.DELETE("/albums/:id", deleteAlbumByID)
+	// artist.GET("/albums/stats/:id", albumStatsByID)
+
+	admin.POST("/albums", addAlbum)
+	admin.PUT("/albums/:id", updateAlbumByID)
+	admin.DELETE("/albums/:id", deleteAlbumByID)
+
+	router.Run(":8080")
 }

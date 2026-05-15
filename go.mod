@@ -1,4 +1,4 @@
-module example
+module artistify
 
 go 1.25.0
 
