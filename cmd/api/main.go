@@ -14,6 +14,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 	"artistify/internal/middleware"
 	"artistify/internal/models"
+	"artistify/internal/database"
 )
 
 func register(c *gin.Context) {
@@ -183,7 +184,7 @@ func login(c *gin.Context) {
 func home(c *gin.Context) {
 	c.HTML(http.StatusOK, "index.html", gin.H{
 		"quote": quote.Go(),
-	})	// fmt.Fprintln(quote.go())
+	})
 }
 
 func getAlbums(c *gin.Context) {
@@ -344,12 +345,10 @@ func addAlbum(c *gin.Context) {
 
 var conn *pgx.Conn
 func main() {
+
 	var err error
 
-	conn, err = pgx.Connect(
-		context.Background(),
-		"postgres://postgres:targaryen@localhost:5432/musicdb",
-	)
+	conn, err = database.ConnectDB()
 
 	if err != nil {
 		panic(err)
@@ -360,14 +359,6 @@ func main() {
 	fmt.Println("DATABASE Successfully connected!!!")
 
 	router := gin.Default()
-
-	// artist := router.Group("/artist")
-	// artist.Use(middleware.AuthMiddleware())
-	// artist.Use(middleware.RequireRole("artist"))
-
-	// admin := router.Group("/admin")
-	// admin.Use(middleware.AuthMiddleware())
-	// admin.Use(middleware.RequireRole("admin"))
 
 	router.LoadHTMLGlob("templates/*")
 	
