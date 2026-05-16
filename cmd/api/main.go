@@ -13,28 +13,8 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
 	"artistify/internal/middleware"
-	// "example/internal/middleware"
-	// "log"
+	"artistify/internal/models"
 )
-
-type Albums struct {
-	ID int `json:"id"`
-	AlbumName string `json:"album_name"`
-	Artist string `json:"artist"`
-	Sales int `json:"sales"`
-	Rating float64 `json:"rating"`
-	CreatedAt time.Time `json:"created_at"`
-
-}
-
-type Users struct {
-	ID int `json:"id"`
-	Username string `json:"username"`
-	Email string `json:"email"`
-	Password string `json:"password"`
-	Type string `json:"type"`
-	CreatedAt time.Time `json:"created_at"`
-}
 
 func register(c *gin.Context) {
 	type Register struct {
@@ -77,6 +57,63 @@ func register(c *gin.Context) {
 		"message":"User Registered",
 		"User id":id,
 		"Created at":createdAt,
+	})
+
+}
+
+func registerWithRole(c *gin.Context) {
+	type Register struct {
+		Username string `json:"name"`
+		Email string `json:"email"`
+		Password string `json:"password"`
+		Type int `json:"type"`
+	}
+
+	var registerInput Register
+
+	err := c.BindJSON(&registerInput)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	var id int
+	var createdAt time.Time
+
+	hashedPassword, _ := bcrypt.GenerateFromPassword([]byte(registerInput.Password), bcrypt.DefaultCost)
+
+	var Role string
+
+	if registerInput.Type == 0 {
+		Role = "admin"
+	} else if registerInput.Type == 1 {
+		Role = "artist"
+	} else {
+		Role = "user"
+	}
+
+	err = conn.QueryRow(context.Background(),
+						"INSERT INTO users(username, email, password, type) VALUES($1, $2, $3, $4) RETURNING id, created_at",
+						registerInput.Username, 
+						registerInput.Email,
+						string(hashedPassword),
+						Role,
+						).Scan(
+							&id,
+							&createdAt,
+						)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusCreated, gin.H{
+		"message":"User Registered",
+		"User id":id,
+		"Created at":createdAt,
+		"Acces:": Role,
 	})
 
 }
@@ -158,9 +195,9 @@ func getAlbums(c *gin.Context) {
 	
 	defer rows.Close()
 
-	var albums []Albums
+	var albums []models.Albums
 	for rows.Next() {
-		var album Albums
+		var album models.Albums
 		err := rows.Scan(&album.ID, &album.AlbumName, &album.Artist, &album.Sales, &album.Rating, &album.CreatedAt)
 
 		if err != nil {
@@ -176,7 +213,7 @@ func getAlbums(c *gin.Context) {
 
 func getAlbumByID(c *gin.Context) {
 	id := c.Param("id")
-	var album Albums
+	var album models.Albums
 	err := conn.QueryRow(
 		context.Background(),
 		"SELECT * FROM albums WHERE id =$1", 
@@ -199,7 +236,7 @@ func getAlbumByID(c *gin.Context) {
 
 func getAlbumsByArtist(c *gin.Context) {
 	artist := c.Param("artist")
-	var albums []Albums
+	var albums []models.Albums
 	rows, err := conn.Query(context.Background(),
 						"SELECT id, album_name, artist, sales, rating, created_at FROM albums WHERE artist = $1", 
 						artist)
@@ -212,7 +249,7 @@ func getAlbumsByArtist(c *gin.Context) {
 	defer rows.Close()
 
 	for rows.Next() {
-		var album Albums
+		var album models.Albums
 		err := rows.Scan(&album.ID, &album.AlbumName, &album.Artist, &album.Sales, &album.Rating, &album.CreatedAt)
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error":err.Error()})
@@ -227,7 +264,7 @@ func getAlbumsByArtist(c *gin.Context) {
 
 func updateAlbumByID(c *gin.Context) {
 	id := c.Param("id")
-	var updatedAlbum Albums
+	var updatedAlbum models.Albums
 	err := c.BindJSON(&updatedAlbum) 
 
 	if err != nil {
@@ -278,7 +315,7 @@ func deleteAlbumByID(c *gin.Context) {
 }
 
 func addAlbum(c *gin.Context) {
-	var newAlbum Albums
+	var newAlbum models.Albums
 	err := c.BindJSON(&newAlbum)
 
 	if err != nil {
@@ -324,33 +361,49 @@ func main() {
 
 	router := gin.Default()
 
-	artist := router.Group("/artist")
-	artist.Use(middleware.AuthMiddleware())
-	artist.Use(middleware.RequireRole("artist"))
+	// artist := router.Group("/artist")
+	// artist.Use(middleware.AuthMiddleware())
+	// artist.Use(middleware.RequireRole("artist"))
 
-	admin := router.Group("/admin")
-	admin.Use(middleware.AuthMiddleware())
-	admin.Use(middleware.RequireRole("admin"))
+	// admin := router.Group("/admin")
+	// admin.Use(middleware.AuthMiddleware())
+	// admin.Use(middleware.RequireRole("admin"))
 
 	router.LoadHTMLGlob("templates/*")
-
+	
 	fmt.Println("Running server at 8080...", quote.Go())
-
+	
 	router.GET("/", home)
 	router.POST("/auth/login", login)
 	router.POST("/auth/register", register)
+	router.POST("/auth/registerWithRole", registerWithRole)
 	router.GET("/albums", getAlbums)
 	router.GET("/albums/artist/:artist", getAlbumsByArtist)
 	router.GET("/albums/:id", getAlbumByID)
 	
-	artist.POST("/albums", addAlbum)
-	artist.PUT("/albums/:id", updateAlbumByID)
-	artist.DELETE("/albums/:id", deleteAlbumByID)
+
+	artist := router.Group("/artist")
+	artist.Use(middleware.AuthMiddleware())
+	artist.Use(middleware.RequireRole("artist")) 
+	{
+		artist.POST("/albums", addAlbum)
+		artist.PUT("/albums/:id", updateAlbumByID)
+		artist.DELETE("/albums/:id", deleteAlbumByID)
+	}
+
+	admin := router.Group("/admin")
+	admin.Use(middleware.AuthMiddleware())
+	admin.Use(middleware.RequireRole("admin")) 
+	{
+		admin.POST("/albums", addAlbum)
+		admin.PUT("/albums/:id", updateAlbumByID)
+		admin.DELETE("/albums/:id", deleteAlbumByID)
+	}
+
+
 	// artist.GET("/albums/stats/:id", albumStatsByID)
 
-	admin.POST("/albums", addAlbum)
-	admin.PUT("/albums/:id", updateAlbumByID)
-	admin.DELETE("/albums/:id", deleteAlbumByID)
+
 
 	router.Run(":8080")
 }
