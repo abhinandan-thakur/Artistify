@@ -1,0 +1,27 @@
+func registerUser(conn *pgx.Conn) (int, time, error){
+		type Register struct {
+		Username string `json:"name"`
+		Email string `json:"email"`
+		Password string `json:"password"`
+	}
+
+	var registerInput Register
+	var id int
+	var createdAt time.Time
+	err = conn.QueryRow(context.Background(),
+					"INSERT INTO users(username, email, password, type) VALUES($1, $2, $3, $4) RETURNING id, created_at",
+					registerInput.Username, 
+					registerInput.Email,
+					string(hashedPassword),
+					"user",
+					).Scan(
+						&id,
+						&createdAt,
+					)
+
+	if err != nil {
+		return 0, -1, err
+	}
+
+	return id, createdAt, nil
+}

@@ -17,6 +17,8 @@ import (
 	"artistify/internal/database"
 )
 
+
+
 func register(c *gin.Context) {
 	type Register struct {
 		Username string `json:"name"`
@@ -363,9 +365,11 @@ func main() {
 	router.LoadHTMLGlob("templates/*")
 	
 	fmt.Println("Running server at 8080...", quote.Go())
+
+	ipRateLimiter := middleware.NewIPRateLimiter()
 	
 	router.GET("/", home)
-	router.POST("/auth/login", login)
+	router.POST("/auth/login", middleware.RateLimitMiddleware(ipRateLimiter), login)
 	router.POST("/auth/register", register)
 	router.POST("/auth/registerWithRole", registerWithRole)
 	router.GET("/albums", getAlbums)
