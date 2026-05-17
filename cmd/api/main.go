@@ -4,14 +4,17 @@ import (
 	"fmt"
 	"net/http"
 	"rsc.io/quote"
+	"time"
+	"encoding/json"
+	"context"
 	// "strconv"
 	// "html/template"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5"
-	"context"
-	"time"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"
+	"github.com/redis/go-redis/v9"
+
 	"artistify/internal/middleware"
 	"artistify/internal/models"
 	"artistify/internal/database"
@@ -189,29 +192,55 @@ func home(c *gin.Context) {
 	})
 }
 
-func getAlbums(c *gin.Context) {
-	rows, err := conn.Query(context.Background(), "SELECT * FROM albums")
-	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(),})
-		return
-	}
-	
-	defer rows.Close()
+func getAlbums(rdb *redis.Client) gin.HandlerFunc {
+	return func(c *gin.Context) {
 
-	var albums []models.Albums
-	for rows.Next() {
-		var album models.Albums
-		err := rows.Scan(&album.ID, &album.AlbumName, &album.Artist, &album.Sales, &album.Rating, &album.CreatedAt)
+		cacheKey := "albums:all"
+		
+		cachedAlbums, err := rdb.Get(database.Ctx, cacheKey).Result()
 
+		var albums []models.Albums
+		
+		if err == nil {
+			json.Unmarshal([]byte(cachedAlbums), &albums)
+			c.JSON(http.StatusOK, gin.H{
+										"source":"redis",
+										"data":albums,
+									})
+			return
+		}
+
+		rows, err := conn.Query(context.Background(), "SELECT * FROM albums")
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(),})
 			return
 		}
-
-		albums = append(albums, album)
+		
+		defer rows.Close()
+		
+		for rows.Next() {
+			var album models.Albums
+			err := rows.Scan(&album.ID, &album.AlbumName, &album.Artist, &album.Sales, &album.Rating, &album.CreatedAt)
+			
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error(),})
+				return
+			}
+			
+			albums = append(albums, album)
+		}
+		
+		jsonData,_  := json.Marshal(albums)
+		
+		err = rdb.Set(database.Ctx, cacheKey, jsonData, 10*time.Minute).Err()
+		if err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error":"not able to create redis"})
+		}
+		
+		
+		
+		c.JSON(http.StatusOK, gin.H{"source":"Postegres","data":albums})
 	}
-
-	c.JSON(http.StatusOK, albums)
 }
 
 func getAlbumByID(c *gin.Context) {
@@ -351,6 +380,7 @@ func main() {
 	var err error
 
 	conn, err = database.ConnectDB()
+	redisClient := database.ConnectRedis()
 
 	if err != nil {
 		panic(err)
@@ -372,7 +402,7 @@ func main() {
 	router.POST("/auth/login", middleware.RateLimitMiddleware(ipRateLimiter), login)
 	router.POST("/auth/register", register)
 	router.POST("/auth/registerWithRole", registerWithRole)
-	router.GET("/albums", getAlbums)
+	router.GET("/albums", getAlbums(redisClient))
 	router.GET("/albums/artist/:artist", getAlbumsByArtist)
 	router.GET("/albums/:id", getAlbumByID)
 	
