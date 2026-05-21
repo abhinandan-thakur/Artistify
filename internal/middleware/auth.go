@@ -1,11 +1,11 @@
 package middleware
 
-
 import (
 	"strings"
 	"net/http"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gin-gonic/gin"
+	"fmt"
 )
 
 var jwtSecret = []byte("super-secret-key")
@@ -66,42 +66,3 @@ func RequireRole(role string) gin.HandlerFunc {
 		c.Next()
 	}
 }
-
-
-/*
-func RBACMiddleware(permission string) gin.HandlerFunc {
-    return func(c *gin.Context) {
-        userID, exists := c.Get("id")
-        if !exists {
-            c.JSON(http.StatusUnauthorized, gin.H{"error": "User ID not found"})
-            c.Abort()
-            return
-        }
-if !database.HasAccess(userID.(int), permission) {
-            c.JSON(http.StatusForbidden, gin.H{"error": "Permission denied"})
-            c.Abort()
-            return
-        }
-        c.Next()
-    }
-}
-
-func HasAccess(userID int, accessName string) bool {
-    var count int
-    query := `SELECT COUNT(*)
-    FROM users u
-    JOIN user_role ur ON u.id = ur.user_id
-    JOIN role_access ra ON ur.role_id = ra.role_id
-    JOIN access a ON ra.access_id = a.access_id
-    WHERE u.id = $1 AND a.access_name = $2`
-
-    err := Db.QueryRow(query, userID, accessName).Scan(&count)
-    if err != nil {
-        // Handle error (optional: log the error)
-        return false
-    }
-
-    return count > 0
-}
-
-*/
