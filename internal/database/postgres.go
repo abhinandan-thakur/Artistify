@@ -2,8 +2,9 @@ package database
 
 import (
 	"context"
-	// "fmt"
+	"fmt"
 	"os"
+	"time"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/joho/godotenv"
@@ -13,7 +14,7 @@ import (
 
 // }
 
-func ConnectDB() (*pgx.Conn, error){
+func ConnectDB() (*pgx.Conn, error) {
 
 	err := godotenv.Load()
 
@@ -23,16 +24,31 @@ func ConnectDB() (*pgx.Conn, error){
 
 	var DB_URL string
 
-	DB_URL = "postgres://"+os.Getenv("DB_USER")+":"+os.Getenv("DB_PASSWORD")+"@"+os.Getenv("DB_HOST")+":"+os.Getenv("DB_PORT")+"/"+os.Getenv("DB_NAME")
+	var conn *pgx.Conn
 
-	conn, err := pgx.Connect(
-		context.Background(),
-		DB_URL,
-	)
+	DB_URL = "postgres://" +
+		os.Getenv("DB_USER") + ":" +
+		os.Getenv("DB_PASSWORD") + "@" +
+		os.Getenv("DB_HOST") + ":" +
+		os.Getenv("DB_PORT") + "/" +
+		os.Getenv("DB_NAME") +
+		"?sslmode=disable"
 
-	if err != nil {
-		return nil, err
+	for i := 0; i < 10; i++ {
+
+		conn, err = pgx.Connect(
+			context.Background(),
+			DB_URL,
+		)
+
+		if err == nil {
+			fmt.Println("Connected to Database!")
+			return conn, nil
+		}
+		fmt.Println("Retrying to connect to Database...")
+		time.Sleep(3 * time.Second)
 	}
 
-	return conn, err
+	return nil, err
+
 }
