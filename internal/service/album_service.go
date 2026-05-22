@@ -13,17 +13,24 @@ import (
 
 func GetAlbums(conn *pgx.Conn, rdb *redis.Client) ([]models.Albums, string, error) {
 	cacheKey := "albums:all"
-		
-	cachedAlbums, err := rdb.Get(database.Ctx, cacheKey).Result()
-
 	var albums []models.Albums
 		
-	if err == nil {
-		json.Unmarshal([]byte(cachedAlbums), &albums)
-		return albums, "Redis", err
+	// Try Redis only if client exists
+	if rdb != nil {
+
+		cachedAlbums, err := rdb.Get(database.Ctx, cacheKey).Result()
+
+		if err == nil {
+
+			err = json.Unmarshal([]byte(cachedAlbums), &albums)
+
+			if err == nil {
+				return albums, "Redis", nil
+			}
+		}
 	}
 
-	albums, err = repository.GetAlbums(conn)
+	albums, err := repository.GetAlbums(conn)
 
 	if err != nil {
 		return nil, "Postgres", err

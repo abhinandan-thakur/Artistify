@@ -5,7 +5,6 @@ import (
 	"net/http"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gin-gonic/gin"
-	"fmt"
 )
 
 var jwtSecret = []byte("super-secret-key")
