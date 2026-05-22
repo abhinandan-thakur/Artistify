@@ -1,20 +1,19 @@
 package service
 
 import (
-	"artistify/internal/repository"
 	"artistify/internal/database"
 	"artistify/internal/models"
+	"artistify/internal/repository"
 	"encoding/json"
 	"github.com/jackc/pgx/v5"
 	"github.com/redis/go-redis/v9"
 	"time"
 )
 
-
 func GetAlbums(conn *pgx.Conn, rdb *redis.Client) ([]models.Albums, string, error) {
 	cacheKey := "albums:all"
 	var albums []models.Albums
-		
+
 	// Try Redis only if client exists
 	if rdb != nil {
 
@@ -55,35 +54,35 @@ func GetAlbumByID(conn *pgx.Conn, id int) (models.Albums, error) {
 }
 
 func GetAlbumsByArtist(conn *pgx.Conn, artist string) ([]models.Albums, error) {
-		albums, err := repository.GetAlbumsByArtist(conn, artist)
+	albums, err := repository.GetAlbumsByArtist(conn, artist)
 
-		if err != nil {
-			return nil, err
-		}
-		
-		return albums, nil
+	if err != nil {
+		return nil, err
+	}
+
+	return albums, nil
 }
 
 func PostAlbum(conn *pgx.Conn, newAlbum models.Albums) (models.Albums, error) {
 
-		newAlbum, err := repository.PostAlbum(conn, newAlbum)
-		
-		if err != nil {
-			return models.Albums{}, err
-		}
+	newAlbum, err := repository.PostAlbum(conn, newAlbum)
 
-		return newAlbum, nil
+	if err != nil {
+		return models.Albums{}, err
+	}
+
+	return newAlbum, nil
 }
 
-func DeleteAlbumByID(conn *pgx.Conn, id int) (error) {
+func DeleteAlbumByID(conn *pgx.Conn, id int) error {
 
-		err := repository.DeleteAlbumByID(conn, id)
-		
-		if err != nil {
-			return err
-		}
-		
-		return nil
+	err := repository.DeleteAlbumByID(conn, id)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func UpdateAlbumByID(conn *pgx.Conn, id int, updatedAlbum models.Albums) (models.Albums, error) {

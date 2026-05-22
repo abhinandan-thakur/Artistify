@@ -1,12 +1,13 @@
 package database
 
 import (
-	"github.com/redis/go-redis/v9"
 	"context"
+	"github.com/redis/go-redis/v9"
 	"os"
 )
 
 var Ctx = context.Background()
+
 func ConnectRedis() *redis.Client {
 	redisHost := os.Getenv("REDIS_HOST")
 	redisPort := os.Getenv("REDIS_PORT")
@@ -19,5 +20,3 @@ func ConnectRedis() *redis.Client {
 
 	return rdb
 }
-
-

@@ -1,10 +1,10 @@
 package middleware
 
 import (
-	"strings"
-	"net/http"
-	"github.com/golang-jwt/jwt/v5"
 	"github.com/gin-gonic/gin"
+	"github.com/golang-jwt/jwt/v5"
+	"net/http"
+	"strings"
 )
 
 var jwtSecret = []byte("super-secret-key")
@@ -22,15 +22,15 @@ func AuthMiddleware() gin.HandlerFunc {
 		claims := jwt.MapClaims{}
 
 		token, err := jwt.ParseWithClaims(
-			tokenStrings, 
-			claims, 
+			tokenStrings,
+			claims,
 			func(token *jwt.Token) (interface{}, error) {
-				if _, ok := token.Method.(*jwt.SigningMethodHMAC); ! ok {
+				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 					return nil, jwt.ErrTokenSignatureInvalid
 				}
-			return jwtSecret, nil
-		},
-	)
+				return jwtSecret, nil
+			},
+		)
 
 		if err != nil || !token.Valid {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "Missing or invalid token"})
@@ -39,9 +39,9 @@ func AuthMiddleware() gin.HandlerFunc {
 		}
 
 		claims = token.Claims.(jwt.MapClaims)
-		
+
 		c.Set("id", claims["id"])
-        c.Set("role", claims["role"])
+		c.Set("role", claims["role"])
 		c.Next()
 	}
 }
@@ -57,7 +57,7 @@ func RequireRole(role string) gin.HandlerFunc {
 		}
 
 		if userRole != role {
-			c.JSON(http.StatusForbidden, gin.H{"error":"Not accessible"})
+			c.JSON(http.StatusForbidden, gin.H{"error": "Not accessible"})
 			c.Abort()
 			return
 		}

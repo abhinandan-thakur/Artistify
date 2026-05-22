@@ -14,7 +14,7 @@ import (
 
 // }
 
-func ConnectDB() (*pgx.Conn, error){
+func ConnectDB() (*pgx.Conn, error) {
 
 	err := godotenv.Load()
 
@@ -26,12 +26,12 @@ func ConnectDB() (*pgx.Conn, error){
 
 	var conn *pgx.Conn
 
-	DB_URL = "postgres://"+
-		os.Getenv("DB_USER")+":"+
-		os.Getenv("DB_PASSWORD")+"@"+
-		os.Getenv("DB_HOST")+":"+
-		os.Getenv("DB_PORT")+"/"+
-		os.Getenv("DB_NAME")+
+	DB_URL = "postgres://" +
+		os.Getenv("DB_USER") + ":" +
+		os.Getenv("DB_PASSWORD") + "@" +
+		os.Getenv("DB_HOST") + ":" +
+		os.Getenv("DB_PORT") + "/" +
+		os.Getenv("DB_NAME") +
 		"?sslmode=disable"
 
 	for i := 0; i < 10; i++ {
@@ -46,9 +46,9 @@ func ConnectDB() (*pgx.Conn, error){
 			return conn, nil
 		}
 		fmt.Println("Retrying to connect to Database...")
-		time.Sleep(3*time.Second)
+		time.Sleep(3 * time.Second)
 	}
 
-		return nil, err
+	return nil, err
 
 }
