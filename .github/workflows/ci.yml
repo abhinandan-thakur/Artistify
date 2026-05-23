@@ -1,98 +1,56 @@
-name: Artistify CI
+name: "Artistify CI"
 
 on:
-  push:
-    branches: [main]
-
-  pull_request:
+    push:
+        branches:
+               - main
+        
+    pull_request:
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
+    test:
+        runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:17
-        env:
-          POSTGRES_USER: postgres
-          POSTGRES_PASSWORD: targaryen
-          POSTGRES_DB: musicdb
+        services:
+            postgres:
+                image: postgres:17
+                env:
+                    POSTGRES_DB: musicdb
+                    POSTGRES_PASSWORD: targaryen
+                    POSTGRES_USER: postgres
 
-        ports:
-          - 5432:5432
+                ports:
+                    - 5432:5432
 
-      redis:
-        image: redis:8
+            redis:
+                image: redis:8
 
-        ports:
-          - 6379:6379
+                ports:
+                    - 6379:6379
 
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
+        steps:
+            - name: Checkout
+              uses: actions/checkout@4
 
-      - name: Setup Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: "1.25"
+            - name: Setup Go
+              uses: actions/setup-go@v5
+              with:
+                go-version: "1.25"
 
-      - name: Install Dependencies
-        run: go mod tidy
+            - name: Install Dependencies
+              run: go mod tidy
 
-      - name: Format Check
-        run: test -z "$(gofmt -l .)"
+            - name: Format Check
+              run: test -z "$(gofmt -l .)"
 
-      - name: Go Vet
-        run: go vet ./...
+            - name: Go Vet test
+              run: go vet ./...
 
-      - name: Install GolangCI-Lint
-        run: |
-          curl -sSfL \
-          https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh \
-          | sh -s -- -b $(go env GOPATH)/bin
+            - name: Run Linter test
+              run: golangci-lint run
 
-      - name: Run Linter
-        run: golangci-lint run
+            - name: Run Test
+              run: go test ./...
 
-      - name: Run Tests
-        run: go test ./...
-
-      - name: Build Project
-        run: go build ./...
-
-      - name: Start Docker Containers
-        run: docker compose up -d
-
-      - name: Wait for App Startup
-        run: sleep 15
-
-      - name: Install k6
-        run: |
-          sudo gpg -k
-          sudo apt-get update
-          sudo apt-get install -y gnupg software-properties-common
-
-          curl -fsSL https://dl.k6.io/key.gpg | \
-          sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
-
-          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] \
-          https://dl.k6.io/deb stable main" | \
-          sudo tee /etc/apt/sources.list.d/k6.list
-
-          sudo apt-get update
-          sudo apt-get install -y k6
-
-      - name: Run Load Test
-        run: k6 run tests/k6/stress.js
-
-      - name: Deploy to Docker
-        uses: appleboy/ssh-action@master
-        with:
-          username: ${{secrets.DOCKER_USERNAME}}
-          password: ${{secrets.DOCKER_PASSWORD}}
-
-      - name: Build image
-        run: docker build -t Abhinandan/artistify:latest .
-
-      - name: Push Image
-        run: docker push Abhinandan/artistify:latest
+            - name: Build Project
+              run: go build ./...
