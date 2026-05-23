@@ -63,5 +63,9 @@ func Login(pool *pgxpool.Pool, input models.Users) (string, string, error) {
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	tokenString, err := token.SignedString([]byte("super-secret-key"))
 
+	if err != nil {
+		return "","",err
+	}
+
 	return tokenString, user.Type, nil
 }

@@ -62,12 +62,13 @@ func main() {
 	var err error
 
 	pool, err = database.ConnectDB()
-	defer pool.Close()
 	redisClient := database.ConnectRedis()
-
+	
 	if err != nil {
+		log.Fatal(err)
 		panic(err)
 	}
+	defer pool.Close()
 
 	fmt.Println("DATABASE Successfully connected!!!")
 
@@ -110,5 +111,8 @@ func main() {
 
 	// artist.GET("/albums/stats/:id", albumStatsByID)
 
-	router.Run(":8080")
+	err = router.Run(":8080")
+	if err != nil {
+		log.Fatal(err)
+	}
 }

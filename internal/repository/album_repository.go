@@ -120,7 +120,7 @@ func DeleteAlbumByID(pool *pgxpool.Pool, id int) error {
 	}
 
 	if commandTag.RowsAffected() == 0 {
-		return errors.New("Album Not Found")
+		return errors.New("album not Found")
 	}
 
 	return nil

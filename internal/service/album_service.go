@@ -39,6 +39,10 @@ func GetAlbums(pool *pgxpool.Pool, rdb *redis.Client) ([]models.Albums, string, 
 
 	err = rdb.Set(database.Ctx, cacheKey, jsonData, 30*time.Minute).Err()
 
+	if err != nil {
+		log.Println("failed to cache data:", err)
+	}
+
 	return albums, "Postgres", nil
 
 }
