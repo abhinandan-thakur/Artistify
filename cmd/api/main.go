@@ -4,12 +4,12 @@ import (
 	"artistify/internal/database"
 	"artistify/internal/handlers"
 	"artistify/internal/middleware"
-	"context"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"log"
 	"net/http"
 	"rsc.io/quote"
 	"strconv"
@@ -55,20 +55,20 @@ func RequestMetricsMiddleware() gin.HandlerFunc {
 	}
 }
 
-var conn *pgx.Conn
+var pool *pgxpool.Pool
 
 func main() {
 
 	var err error
 
-	conn, err = database.ConnectDB()
+	pool, err = database.ConnectDB()
 	redisClient := database.ConnectRedis()
 
 	if err != nil {
+		log.Fatal(err)
 		panic(err)
 	}
-
-	defer conn.Close(context.Background())
+	defer pool.Close()
 
 	fmt.Println("DATABASE Successfully connected!!!")
 
@@ -84,32 +84,35 @@ func main() {
 	router.GET("/", home)
 	//  router.GET("/metrics", PrometheusHandler())
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
-	router.POST("/auth/login", middleware.RateLimitMiddleware(ipRateLimiter), handlers.Login(conn))
-	router.POST("/auth/register", handlers.Register(conn))
-	router.POST("/auth/registerWithRole", handlers.RegisterWithRole(conn))
-	router.GET("/albums", handlers.GetAlbums(conn, redisClient))
-	router.GET("/albums/artist/:artist", handlers.GetAlbumsByArtist(conn))
-	router.GET("/albums/:id", handlers.GetAlbumByID(conn))
+	router.POST("/auth/login", middleware.RateLimitMiddleware(ipRateLimiter), handlers.Login(pool))
+	router.POST("/auth/register", handlers.Register(pool))
+	router.POST("/auth/registerWithRole", handlers.RegisterWithRole(pool))
+	router.GET("/albums", handlers.GetAlbums(pool, redisClient))
+	router.GET("/albums/artist/:artist", handlers.GetAlbumsByArtist(pool))
+	router.GET("/albums/:id", handlers.GetAlbumByID(pool))
 
 	artist := router.Group("/artist")
 	artist.Use(middleware.AuthMiddleware())
 	artist.Use(middleware.RequireRole("artist"))
 	{
-		artist.POST("/albums", handlers.PostAlbum(conn))
-		artist.PUT("/albums/:id", handlers.UpdateAlbumByID(conn))
-		artist.DELETE("/albums/:id", handlers.DeleteAlbumByID(conn))
+		artist.POST("/albums", handlers.PostAlbum(pool))
+		artist.PUT("/albums/:id", handlers.UpdateAlbumByID(pool))
+		artist.DELETE("/albums/:id", handlers.DeleteAlbumByID(pool))
 	}
 
 	admin := router.Group("/admin")
 	admin.Use(middleware.AuthMiddleware())
 	admin.Use(middleware.RequireRole("admin"))
 	{
-		admin.POST("/albums", handlers.PostAlbum(conn))
-		admin.PUT("/albums/:id", handlers.UpdateAlbumByID(conn))
-		admin.DELETE("/albums/:id", handlers.DeleteAlbumByID(conn))
+		admin.POST("/albums", handlers.PostAlbum(pool))
+		admin.PUT("/albums/:id", handlers.UpdateAlbumByID(pool))
+		admin.DELETE("/albums/:id", handlers.DeleteAlbumByID(pool))
 	}
 
 	// artist.GET("/albums/stats/:id", albumStatsByID)
 
-	router.Run(":8080")
+	err = router.Run(":8080")
+	if err != nil {
+		log.Fatal(err)
+	}
 }

@@ -6,17 +6,21 @@ import (
 	"os"
 	"time"
 
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
 
-// func ConnectDB() (*pgx.Conn, error) {
+func ConnectDB() (*pgxpool.Pool, error) {
 
-// }
+	env := os.Getenv("APP_ENV")
 
-func ConnectDB() (*pgx.Conn, error) {
+	if env == "" {
+		env = "local"
+	}
 
-	err := godotenv.Load()
+	envFile := ".env." + env
+
+	err := godotenv.Load(envFile)
 
 	if err != nil {
 		return nil, err
@@ -24,7 +28,7 @@ func ConnectDB() (*pgx.Conn, error) {
 
 	var DB_URL string
 
-	var conn *pgx.Conn
+	var pool *pgxpool.Pool
 
 	DB_URL = "postgres://" +
 		os.Getenv("DB_USER") + ":" +
@@ -36,14 +40,14 @@ func ConnectDB() (*pgx.Conn, error) {
 
 	for i := 0; i < 10; i++ {
 
-		conn, err = pgx.Connect(
+		pool, err = pgxpool.New(
 			context.Background(),
 			DB_URL,
 		)
 
 		if err == nil {
 			fmt.Println("Connected to Database!")
-			return conn, nil
+			return pool, nil
 		}
 		fmt.Println("Retrying to connect to Database...")
 		time.Sleep(3 * time.Second)

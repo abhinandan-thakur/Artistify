@@ -11,9 +11,11 @@ services:
       - redis
 
     env_file:
-      - .env
+      - .env.docker
 
     environment:
+      APP_ENV: docker
+
       DB_HOST: postgres
       DB_PORT: 5432
 
@@ -30,7 +32,7 @@ services:
       POSTGRES_DB: musicdb
 
     ports:
-      - "5432:5432"
+      - "5433:5432"
 
     volumes:
       - postgres_data:/var/lib/postgresql/data
@@ -40,7 +42,7 @@ services:
     container_name: artistify-redis
 
     ports:
-      - "6379:6379"
+      - "6380:6379"
 
   prometheus:
     image: prom/prometheus

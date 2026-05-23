@@ -4,14 +4,14 @@ import (
 	"artistify/internal/models"
 	"context"
 	"errors"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func GetAlbums(conn *pgx.Conn) ([]models.Albums, error) {
+func GetAlbums(pool *pgxpool.Pool) ([]models.Albums, error) {
 
 	var albums []models.Albums
 
-	rows, err := conn.Query(
+	rows, err := pool.Query(
 		context.Background(),
 		"SELECT id, album_name, artist, sales, rating, created_at FROM albums",
 	)
@@ -38,10 +38,10 @@ func GetAlbums(conn *pgx.Conn) ([]models.Albums, error) {
 
 }
 
-func GetAlbumByID(conn *pgx.Conn, id int) (models.Albums, error) {
+func GetAlbumByID(pool *pgxpool.Pool, id int) (models.Albums, error) {
 	var album models.Albums
 
-	err := conn.QueryRow(
+	err := pool.QueryRow(
 		context.Background(),
 		"SELECT id, album_name, artist, sales, rating, created_at FROM albums WHERE id =$1",
 		id,
@@ -62,10 +62,10 @@ func GetAlbumByID(conn *pgx.Conn, id int) (models.Albums, error) {
 
 }
 
-func GetAlbumsByArtist(conn *pgx.Conn, artist string) ([]models.Albums, error) {
+func GetAlbumsByArtist(pool *pgxpool.Pool, artist string) ([]models.Albums, error) {
 	var albums []models.Albums
 
-	rows, err := conn.Query(
+	rows, err := pool.Query(
 		context.Background(),
 		"SELECT id, album_name, artist, sales, rating, created_at FROM albums WHERE artist = $1",
 		artist)
@@ -88,9 +88,9 @@ func GetAlbumsByArtist(conn *pgx.Conn, artist string) ([]models.Albums, error) {
 	return albums, nil
 }
 
-func PostAlbum(conn *pgx.Conn, newAlbum models.Albums) (models.Albums, error) {
+func PostAlbum(pool *pgxpool.Pool, newAlbum models.Albums) (models.Albums, error) {
 
-	err := conn.QueryRow(
+	err := pool.QueryRow(
 		context.Background(),
 		"INSERT INTO albums (album_name, artist, sales, rating) VALUES($1, $2, $3, $4) RETURNING id, created_at",
 		newAlbum.AlbumName,
@@ -103,14 +103,14 @@ func PostAlbum(conn *pgx.Conn, newAlbum models.Albums) (models.Albums, error) {
 	)
 
 	if err != nil {
-		return models.Albums{}, nil
+		return models.Albums{}, err
 	}
 
 	return newAlbum, nil
 }
 
-func DeleteAlbumByID(conn *pgx.Conn, id int) error {
-	commandTag, err := conn.Exec(context.Background(),
+func DeleteAlbumByID(pool *pgxpool.Pool, id int) error {
+	commandTag, err := pool.Exec(context.Background(),
 		"DELETE FROM albums WHERE id = $1",
 		id,
 	)
@@ -120,15 +120,15 @@ func DeleteAlbumByID(conn *pgx.Conn, id int) error {
 	}
 
 	if commandTag.RowsAffected() == 0 {
-		return errors.New("Album Not Found")
+		return errors.New("album not Found")
 	}
 
 	return nil
 }
 
-func UpdateAlbumByID(conn *pgx.Conn, id int, updatedAlbum models.Albums) (models.Albums, error) {
+func UpdateAlbumByID(pool *pgxpool.Pool, id int, updatedAlbum models.Albums) (models.Albums, error) {
 
-	err := conn.QueryRow(context.Background(),
+	err := pool.QueryRow(context.Background(),
 		"UPDATE albums SET album_name = $2, artist = $3, sales = $4, rating = $5 WHERE id = $1 RETURNING id, created_at",
 		id,
 		updatedAlbum.AlbumName,

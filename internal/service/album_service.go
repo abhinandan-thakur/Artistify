@@ -5,12 +5,13 @@ import (
 	"artistify/internal/models"
 	"artistify/internal/repository"
 	"encoding/json"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
+	"log"
 	"time"
 )
 
-func GetAlbums(conn *pgx.Conn, rdb *redis.Client) ([]models.Albums, string, error) {
+func GetAlbums(pool *pgxpool.Pool, rdb *redis.Client) ([]models.Albums, string, error) {
 	cacheKey := "albums:all"
 	var albums []models.Albums
 
@@ -29,7 +30,7 @@ func GetAlbums(conn *pgx.Conn, rdb *redis.Client) ([]models.Albums, string, erro
 		}
 	}
 
-	albums, err := repository.GetAlbums(conn)
+	albums, err := repository.GetAlbums(pool)
 
 	if err != nil {
 		return nil, "Postgres", err
@@ -39,12 +40,16 @@ func GetAlbums(conn *pgx.Conn, rdb *redis.Client) ([]models.Albums, string, erro
 
 	err = rdb.Set(database.Ctx, cacheKey, jsonData, 30*time.Minute).Err()
 
+	if err != nil {
+		log.Println("failed to cache data:", err)
+	}
+
 	return albums, "Postgres", nil
 
 }
 
-func GetAlbumByID(conn *pgx.Conn, id int) (models.Albums, error) {
-	album, err := repository.GetAlbumByID(conn, id)
+func GetAlbumByID(pool *pgxpool.Pool, id int) (models.Albums, error) {
+	album, err := repository.GetAlbumByID(pool, id)
 
 	if err != nil {
 		return models.Albums{}, err
@@ -53,8 +58,8 @@ func GetAlbumByID(conn *pgx.Conn, id int) (models.Albums, error) {
 	return album, nil
 }
 
-func GetAlbumsByArtist(conn *pgx.Conn, artist string) ([]models.Albums, error) {
-	albums, err := repository.GetAlbumsByArtist(conn, artist)
+func GetAlbumsByArtist(pool *pgxpool.Pool, artist string) ([]models.Albums, error) {
+	albums, err := repository.GetAlbumsByArtist(pool, artist)
 
 	if err != nil {
 		return nil, err
@@ -63,9 +68,9 @@ func GetAlbumsByArtist(conn *pgx.Conn, artist string) ([]models.Albums, error) {
 	return albums, nil
 }
 
-func PostAlbum(conn *pgx.Conn, newAlbum models.Albums) (models.Albums, error) {
+func PostAlbum(pool *pgxpool.Pool, newAlbum models.Albums) (models.Albums, error) {
 
-	newAlbum, err := repository.PostAlbum(conn, newAlbum)
+	newAlbum, err := repository.PostAlbum(pool, newAlbum)
 
 	if err != nil {
 		return models.Albums{}, err
@@ -74,9 +79,9 @@ func PostAlbum(conn *pgx.Conn, newAlbum models.Albums) (models.Albums, error) {
 	return newAlbum, nil
 }
 
-func DeleteAlbumByID(conn *pgx.Conn, id int) error {
+func DeleteAlbumByID(pool *pgxpool.Pool, id int) error {
 
-	err := repository.DeleteAlbumByID(conn, id)
+	err := repository.DeleteAlbumByID(pool, id)
 
 	if err != nil {
 		return err
@@ -85,9 +90,9 @@ func DeleteAlbumByID(conn *pgx.Conn, id int) error {
 	return nil
 }
 
-func UpdateAlbumByID(conn *pgx.Conn, id int, updatedAlbum models.Albums) (models.Albums, error) {
+func UpdateAlbumByID(pool *pgxpool.Pool, id int, updatedAlbum models.Albums) (models.Albums, error) {
 
-	updatedAlbum, err := repository.UpdateAlbumByID(conn, id, updatedAlbum)
+	updatedAlbum, err := repository.UpdateAlbumByID(pool, id, updatedAlbum)
 
 	if err != nil {
 		return models.Albums{}, err

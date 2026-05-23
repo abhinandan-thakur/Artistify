@@ -4,11 +4,11 @@ import (
 	"artistify/internal/models"
 	"artistify/internal/service"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"net/http"
 )
 
-func Register(conn *pgx.Conn) gin.HandlerFunc {
+func Register(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		var user models.Users
@@ -20,7 +20,7 @@ func Register(conn *pgx.Conn) gin.HandlerFunc {
 			return
 		}
 
-		user, err = service.Register(conn, user)
+		user, err = service.Register(pool, user)
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -35,7 +35,7 @@ func Register(conn *pgx.Conn) gin.HandlerFunc {
 	}
 }
 
-func RegisterWithRole(conn *pgx.Conn) gin.HandlerFunc {
+func RegisterWithRole(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var user models.Users
 
@@ -46,7 +46,7 @@ func RegisterWithRole(conn *pgx.Conn) gin.HandlerFunc {
 			return
 		}
 
-		user, err = service.RegisterWithRole(conn, user)
+		user, err = service.RegisterWithRole(pool, user)
 
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -63,7 +63,7 @@ func RegisterWithRole(conn *pgx.Conn) gin.HandlerFunc {
 
 }
 
-func Login(conn *pgx.Conn) gin.HandlerFunc {
+func Login(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		var user models.Users
@@ -75,7 +75,7 @@ func Login(conn *pgx.Conn) gin.HandlerFunc {
 			return
 		}
 
-		tokenString, role, err := service.Login(conn, user)
+		tokenString, role, err := service.Login(pool, user)
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "could not create token"})

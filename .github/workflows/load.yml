@@ -1,17 +1,21 @@
-name: Stress Test
+name: Load Test
 
 on:
-  workflow_dispatch:
-    
+  workflow_run:
+    workflows: ["Basic Checks"]
+    types: 
+      - completed
+
 jobs:
-  k6-test:
+  load-test:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@4
+        uses: actions/checkout@v4
 
-      - name: Install k6 for Stress testing
+      - name: Install k6 for Load Testing
         run: |
           sudo gpg -k
           sudo apt-get update
@@ -30,4 +34,5 @@ jobs:
       - name: Run Load Test
         env:
           BASE_URL: http://${{ secrets.URL_HOST }}:${{ secrets.URL_PORT }}
-        run: k6 run tests/k6/stress.js
+        run: |
+          k6 run tests/k6/load.js

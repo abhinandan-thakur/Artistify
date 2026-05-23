@@ -1,4 +1,4 @@
-name: "Artistify CI"
+name: Basic Checks
 
 on:
     push:
@@ -30,7 +30,7 @@ jobs:
 
         steps:
             - name: Checkout
-              uses: actions/checkout@4
+              uses: actions/checkout@v4
 
             - name: Setup Go
               uses: actions/setup-go@v5
@@ -46,8 +46,10 @@ jobs:
             - name: Go Vet test
               run: go vet ./...
 
-            - name: Run Linter test
-              run: golangci-lint run
+            - name: Run golangci-lint
+              uses: golangci/golangci-lint-action@v8
+              with:
+                version: latest
 
             - name: Run Test
               run: go test ./...
