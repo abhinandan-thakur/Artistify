@@ -1,18 +1,13 @@
 name: load-test
-
 on:
   workflow_run:
     workflows: ["tests"]
     types:
       - completed
-
 jobs:
   load-test:
-    if: >
-      github.event.workflow_run.conclusion == 'success' &&
-      github.event.workflow_run.head_branch == 'main'
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
     runs-on: ubuntu-latest
-
     services:
       postgres:
         image: postgres:17
@@ -22,24 +17,19 @@ jobs:
           POSTGRES_USER: postgres
         ports:
           - 5432:5432
-
       redis:
         image: redis:8
         ports:
           - 6379:6379
-
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
-
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: "1.25"
-
+          go-version: "1.24"   # fixed from 1.25
       - name: Install Dependencies
         run: go mod tidy
-
       - name: Start API Server
         env:
           DB_HOST: localhost
@@ -56,29 +46,23 @@ jobs:
         run: |
           go run cmd/api/main.go &
           sleep 15
-
       - name: Install k6
         run: |
           sudo apt-get update
           sudo apt-get install -y gnupg software-properties-common
-
           curl -fsSL https://dl.k6.io/key.gpg | \
           sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
-
           echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] \
           https://dl.k6.io/deb stable main" | \
           sudo tee /etc/apt/sources.list.d/k6.list
-
           sudo apt-get update
           sudo apt-get install -y k6
-
       - name: Wait for API
         run: |
           until curl -s http://localhost:8080/albums; do
             echo "Waiting for API..."
             sleep 2
           done
-
       - name: Run Load Test
         env:
           BASE_URL: http://localhost:8080
