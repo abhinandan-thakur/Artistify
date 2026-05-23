@@ -4,14 +4,14 @@ import (
 	"artistify/internal/models"
 	"artistify/internal/repository"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"golang.org/x/crypto/bcrypt"
 	"time"
 )
 
-func Register(conn *pgx.Conn, user models.Users) (models.Users, error) {
+func Register(pool *pgxpool.Pool, user models.Users) (models.Users, error) {
 
-	user, err := repository.Register(conn, user)
+	user, err := repository.Register(pool, user)
 
 	if err != nil {
 		return models.Users{}, nil
@@ -20,7 +20,7 @@ func Register(conn *pgx.Conn, user models.Users) (models.Users, error) {
 	return user, nil
 }
 
-func RegisterWithRole(conn *pgx.Conn, user models.Users) (models.Users, error) {
+func RegisterWithRole(pool *pgxpool.Pool, user models.Users) (models.Users, error) {
 
 	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
 
@@ -30,7 +30,7 @@ func RegisterWithRole(conn *pgx.Conn, user models.Users) (models.Users, error) {
 
 	user.Password = string(hashedPassword)
 
-	user, err = repository.RegisterWithRole(conn, user)
+	user, err = repository.RegisterWithRole(pool, user)
 
 	if err != nil {
 		return models.Users{}, err
@@ -39,9 +39,9 @@ func RegisterWithRole(conn *pgx.Conn, user models.Users) (models.Users, error) {
 	return user, nil
 }
 
-func Login(conn *pgx.Conn, input models.Users) (string, string, error) {
+func Login(pool *pgxpool.Pool, input models.Users) (string, string, error) {
 
-	user, err := repository.Login(conn, input)
+	user, err := repository.Login(pool, input)
 
 	if err != nil {
 		return "", "", err

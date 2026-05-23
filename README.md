@@ -1,3 +1,20 @@
+# LOCAL BUILD RUN
+
+make sure to start postegressql and redis server before...
+
+```bash
+sudo service postgresql start
+```
+
+
+```bash
+sudo service redis-server start
+```
+
+```bash
+APP_ENV=local go run cmd/api/main.go
+```
+
 # Artistify 🎵
 
 Artistify is a backend music platform API built with Go and Gin. It supports authentication, role-based access control (RBAC), album management, Redis caching, and rate limiting.

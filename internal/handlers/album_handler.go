@@ -4,7 +4,7 @@ import (
 	"artistify/internal/models"
 	"artistify/internal/service"
 	"github.com/gin-gonic/gin"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/redis/go-redis/v9"
 	"net/http"
 	"strconv"
@@ -12,9 +12,9 @@ import (
 
 // GET REQUESTS FUNCTION
 
-func GetAlbums(conn *pgx.Conn, rdb *redis.Client) gin.HandlerFunc {
+func GetAlbums(pool *pgxpool.Pool, rdb *redis.Client) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		albums, source, err := service.GetAlbums(conn, rdb)
+		albums, source, err := service.GetAlbums(pool, rdb)
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
@@ -24,7 +24,7 @@ func GetAlbums(conn *pgx.Conn, rdb *redis.Client) gin.HandlerFunc {
 	}
 }
 
-func GetAlbumByID(conn *pgx.Conn) gin.HandlerFunc {
+func GetAlbumByID(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		Stringid := c.Param("id")
@@ -35,7 +35,7 @@ func GetAlbumByID(conn *pgx.Conn) gin.HandlerFunc {
 			return
 		}
 
-		album, err := service.GetAlbumByID(conn, id)
+		album, err := service.GetAlbumByID(pool, id)
 
 		if err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"message": err.Error()})
@@ -46,12 +46,12 @@ func GetAlbumByID(conn *pgx.Conn) gin.HandlerFunc {
 	}
 }
 
-func GetAlbumsByArtist(conn *pgx.Conn) gin.HandlerFunc {
+func GetAlbumsByArtist(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		artist := c.Param("artist")
 
-		albums, err := service.GetAlbumsByArtist(conn, artist)
+		albums, err := service.GetAlbumsByArtist(pool, artist)
 
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -64,7 +64,7 @@ func GetAlbumsByArtist(conn *pgx.Conn) gin.HandlerFunc {
 
 // POST REQUESTS FUNCTION HERE
 
-func PostAlbum(conn *pgx.Conn) gin.HandlerFunc {
+func PostAlbum(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		var newAlbum models.Albums
@@ -75,7 +75,7 @@ func PostAlbum(conn *pgx.Conn) gin.HandlerFunc {
 			return
 		}
 
-		newAlbum, err = service.PostAlbum(conn, newAlbum)
+		newAlbum, err = service.PostAlbum(pool, newAlbum)
 
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
@@ -87,7 +87,7 @@ func PostAlbum(conn *pgx.Conn) gin.HandlerFunc {
 
 // PUT REQUESTS FUNCTION HERE
 
-func UpdateAlbumByID(conn *pgx.Conn) gin.HandlerFunc {
+func UpdateAlbumByID(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		StringID := c.Param("id")
@@ -106,7 +106,7 @@ func UpdateAlbumByID(conn *pgx.Conn) gin.HandlerFunc {
 			return
 		}
 
-		updatedAlbum, err = service.UpdateAlbumByID(conn, id, updatedAlbum)
+		updatedAlbum, err = service.UpdateAlbumByID(pool, id, updatedAlbum)
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, err.Error())
@@ -119,7 +119,7 @@ func UpdateAlbumByID(conn *pgx.Conn) gin.HandlerFunc {
 
 // DELETE REQUESTS FUNCTION HERE
 
-func DeleteAlbumByID(conn *pgx.Conn) gin.HandlerFunc {
+func DeleteAlbumByID(pool *pgxpool.Pool) gin.HandlerFunc {
 	return func(c *gin.Context) {
 
 		Stringid := c.Param("id")
@@ -130,7 +130,7 @@ func DeleteAlbumByID(conn *pgx.Conn) gin.HandlerFunc {
 			return
 		}
 
-		err = service.DeleteAlbumByID(conn, id)
+		err = service.DeleteAlbumByID(pool, id)
 
 		if err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})

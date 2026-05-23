@@ -1,4 +1,4 @@
-name: "Artistify CI"
+name: Basic Checks
 
 on:
     push:

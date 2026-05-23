@@ -3,12 +3,12 @@ package repository
 import (
 	"artistify/internal/models"
 	"context"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
 )
 
-func Register(conn *pgx.Conn, user models.Users) (models.Users, error) {
+func Register(pool *pgxpool.Pool, user models.Users) (models.Users, error) {
 
-	err := conn.QueryRow(context.Background(),
+	err := pool.QueryRow(context.Background(),
 		"INSERT INTO users(username, email, password, type) VALUES($1, $2, $3, $4) RETURNING id, created_at",
 		user.Username,
 		user.Email,
@@ -26,9 +26,9 @@ func Register(conn *pgx.Conn, user models.Users) (models.Users, error) {
 	return user, nil
 }
 
-func RegisterWithRole(conn *pgx.Conn, user models.Users) (models.Users, error) {
+func RegisterWithRole(pool *pgxpool.Pool, user models.Users) (models.Users, error) {
 
-	err := conn.QueryRow(
+	err := pool.QueryRow(
 		context.Background(),
 		"INSERT INTO users(username, email, password, type) VALUES($1, $2, $3, $4) RETURNING id, created_at",
 		user.Username,
@@ -47,9 +47,9 @@ func RegisterWithRole(conn *pgx.Conn, user models.Users) (models.Users, error) {
 	return user, nil
 }
 
-func Login(conn *pgx.Conn, user models.Users) (models.Users, error) {
+func Login(pool *pgxpool.Pool, user models.Users) (models.Users, error) {
 
-	err := conn.QueryRow(context.Background(),
+	err := pool.QueryRow(context.Background(),
 		"SELECT id, username, password, type FROM users WHERE email = $1",
 		user.Email,
 	).Scan(
