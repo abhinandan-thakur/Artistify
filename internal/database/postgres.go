@@ -18,7 +18,7 @@ func ConnectDB() (*pgxpool.Pool, error) {
 		env = "local"
 	}
 
-	envFile := ".env."+env
+	envFile := ".env." + env
 
 	err := godotenv.Load(envFile)
 
