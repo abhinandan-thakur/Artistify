@@ -64,7 +64,7 @@ func Login(pool *pgxpool.Pool, input models.Users) (string, string, error) {
 	tokenString, err := token.SignedString([]byte("super-secret-key"))
 
 	if err != nil {
-		return "","",err
+		return "", "", err
 	}
 
 	return tokenString, user.Type, nil

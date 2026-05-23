@@ -63,7 +63,7 @@ func main() {
 
 	pool, err = database.ConnectDB()
 	redisClient := database.ConnectRedis()
-	
+
 	if err != nil {
 		log.Fatal(err)
 		panic(err)
