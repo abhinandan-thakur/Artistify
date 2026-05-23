@@ -1,0 +1,86 @@
+name: load-test
+
+on:
+  workflow_run:
+    workflows: ["tests"]
+    branches:
+      - main
+    types:
+      - completed
+
+jobs:
+  load-test:
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: musicdb
+          POSTGRES_PASSWORD: targaryen
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:8
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: "1.25"
+
+      - name: Install Dependencies
+        run: go mod tidy
+
+      - name: Start API Server
+        env:
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_USER: postgres
+          DB_PASSWORD: targaryen
+          DB_NAME: musicdb
+          REDIS_HOST: localhost
+          REDIS_PORT: 6379
+          URL_HOST: localhost
+          URL_PORT: 8080
+          JWT_SECRET: test-secret
+          APP_ENV: local
+        run: |
+          go run cmd/api/main.go &
+          sleep 15
+
+      - name: Install k6
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gnupg software-properties-common
+
+          curl -fsSL https://dl.k6.io/key.gpg | \
+          sudo gpg --dearmor -o /usr/share/keyrings/k6-archive-keyring.gpg
+
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] \
+          https://dl.k6.io/deb stable main" | \
+          sudo tee /etc/apt/sources.list.d/k6.list
+
+          sudo apt-get update
+          sudo apt-get install -y k6
+
+      - name: Wait for API
+        run: |
+          until curl -s http://localhost:8080/albums; do
+            echo "Waiting for API..."
+            sleep 2
+          done
+
+      - name: Run Load Test
+        env:
+          BASE_URL: http://localhost:8080
+        run: |
+          k6 run tests/k6/load.js
