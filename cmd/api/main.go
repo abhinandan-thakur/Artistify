@@ -109,10 +109,10 @@ func main() {
 		admin.DELETE("/albums/:id", handlers.DeleteAlbumByID(pool))
 	}
 
-	// artist.GET("/albums/stats/:id", albumStatsByID)
-
 	err = router.Run(":8080")
 	if err != nil {
 		log.Fatal(err)
 	}
 }
+
+// artist.GET("/albums/stats/:id", albumStatsByID)
