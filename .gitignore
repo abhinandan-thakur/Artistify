@@ -1,2 +1,4 @@
 .env.docker
 .env.local
+.env.compose
+.env.*

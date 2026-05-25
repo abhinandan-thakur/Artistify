@@ -1,0 +1,20 @@
+for seeing into postgres
+
+psql -h localhost -U postgres -d musicdb
+
+
+\dt
+
+for seeing all tables inside postgress
+
+
+so you need to build docker image to run
+
+sudo docker build -t artistify-auth .
+
+sudo docker run -p 8180:8180 --env-file .env.docker artistify-auth
+
+
+to run docker 
+
+sudo docker run -p 8180:8180 --env-file .env.docker --add-host=host.docker.internal:host-gateway auth-service

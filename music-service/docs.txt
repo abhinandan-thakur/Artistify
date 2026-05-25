@@ -1,0 +1,11 @@
+to build a docker file
+
+sudo docker build -t music-service .
+
+to know all containers 
+
+docker ps
+
+to run docker file
+
+sudo docker run -p 8090:8180 --env-file .env.docker --add-host=host.docker.internal:host-gateway music-service

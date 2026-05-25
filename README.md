@@ -15,6 +15,21 @@ sudo service redis-server start
 APP_ENV=local go run cmd/api/main.go
 ```
 
+# Proto struct builder
+
+protoc \
+  --go_out=. \
+  --go-grpc_out=. \
+  grpc-learning/proto/auth.proto
+
+
+  protoc \
+  --go_out=. \
+  --go_opt=paths=source_relative \
+  --go-grpc_out=. \
+  --go-grpc_opt=paths=source_relative \
+  grpc-learning/proto/auth.proto
+
 # Artistify 🎵
 
 Artistify is a backend music platform API built with Go and Gin. It supports authentication, role-based access control (RBAC), album management, Redis caching, and rate limiting.
