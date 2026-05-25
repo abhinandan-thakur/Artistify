@@ -1,0 +1,36 @@
+syntax = 'proto3';
+
+option go_package="proto/";
+
+package auth;
+
+service AuthenticateService {
+    rpc IsValidToken(IsValidTokenRequest) returns (IsValidTokenResponse);
+    rpc GetRole(GetRoleRequest) returns (GetRoleResponse);
+    rpc IsValidAndGetRole(IsValidAndGetRoleRequest) returns (IsValidAndGetRoleResponse);
+}
+
+message IsValidTokenRequest {
+    string tokenString = 1;
+}
+
+message IsValidTokenResponse {
+    bool valid = 1;
+}
+
+message GetRoleRequest {
+    string tokenString = 1;
+}
+
+message GetRoleResponse {
+    string role = 1;
+}
+
+message IsValidAndGetRoleRequest {
+    string tokenString = 1;
+}
+
+message IsValidAndGetRoleResponse {
+    bool valid = 1;
+    string role = 2;
+}

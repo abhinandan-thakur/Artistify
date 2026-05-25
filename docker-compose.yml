@@ -1,27 +1,4 @@
 services:
-  app:
-    build: .
-    container_name: artistify-app
-
-    ports:
-      - "8080:8080"
-
-    depends_on:
-      - postgres
-      - redis
-
-    env_file:
-      - .env.docker
-
-    environment:
-      APP_ENV: docker
-
-      DB_HOST: postgres
-      DB_PORT: 5432
-
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-
   postgres:
     image: postgres:17
     container_name: artistify-postgres
@@ -44,12 +21,66 @@ services:
     ports:
       - "6380:6379"
 
+  auth-service:
+    build: 
+      context: ./auth-service
+    container_name: auth-service
+
+    ports:
+      - "8180:8180"
+      - "50051:50051"
+
+    depends_on:
+      - postgres
+
+    env_file:
+      - ./auth-service/.env.compose
+
+    environment:
+      APP_ENV: compose
+
+      DB_HOST: postgres
+      DB_PORT: 5432
+
+      GRPC_HOST: auth-service
+      GRPC_PORT: 50051
+
+  music-service:
+    build:
+      context: ./music-service
+
+    container_name: music-service
+
+    ports:
+      - "8080:8080"
+
+    depends_on:
+      - auth-service
+      - redis
+      - postgres
+
+    env_file:
+      - "./music-service/.env.compose"
+
+    environment:
+      APP_ENV: compose
+
+      DB_HOST: postgres
+      DB_PORT: 5432
+
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+
   prometheus:
     image: prom/prometheus
     container_name: prometheus
 
     ports:
       - "9090:9090"
+    
+    depends_on:
+      - auth-service
+      - music-service
 
     volumes:
       - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
@@ -61,5 +92,8 @@ services:
     ports:
       - "3000:3000"
 
+    depends_on:
+      - prometheus
+ 
 volumes:
   postgres_data:
