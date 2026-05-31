@@ -1,0 +1,20 @@
+spring:
+  config:
+    import: optional:file:.env.local[.properties]
+
+  application:
+    name: notification-service
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  mail:
+    host: ${MAIL_HOST:smtp.gmail.com}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+
+server:
+  port: ${SERVER_PORT:8200}

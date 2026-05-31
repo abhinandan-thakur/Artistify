@@ -1,0 +1,9 @@
+REDIS_PORT=6379
+REDIS_HOST=localhost
+
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=your-google-account-email-id
+MAIL_PASSWORD=your-google-app-password
+
+SERVER_PORT=8200
