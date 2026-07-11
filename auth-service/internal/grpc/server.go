@@ -6,10 +6,9 @@ import (
 
 	pb "github.com/abhinandan-thakur/Artistify/auth-service/proto"
 
-	"google.golang.org/grpc"
 	"github.com/abhinandan-thakur/Artistify/auth-service/internal/config"
+	"google.golang.org/grpc"
 )
-
 
 func StartGRPCServer(config *config.Config) error {
 
@@ -21,11 +20,21 @@ func StartGRPCServer(config *config.Config) error {
 
 	listener, err := net.Listen("tcp", ":"+config.GRPCPort)
 
-	if err != nil {	return err}
+	if err != nil {
+		return err
+	}
 
-	log.Println("gRPC running on :50051")
+	log.Println("gRPC running on :", config.GRPCPort)
 
-	go grpcServer.Serve(listener)
+	// go grpcServer.Serve(listener)
+
+	go func() {
+		err := grpcServer.Serve(listener)
+
+		if err != nil {
+			log.Println("GRPC Server Stopped", err)
+		}
+	}()
 
 	return nil
 }

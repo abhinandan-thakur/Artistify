@@ -15,7 +15,6 @@ type RateLimiter struct {
 	mutex          sync.Mutex
 }
 
-
 func NewRateLimiter(maxTokens, refillRate float64) *RateLimiter {
 	return &RateLimiter{
 		tokens:         maxTokens,
@@ -54,17 +53,16 @@ func (r *RateLimiter) Allow() bool {
 
 // To limit requests per client, we’ll create a map of IP addresses to their respective rate limiters.
 type IPRateLimiter struct {
-	limiters map[string]*RateLimiter
-	mutex    sync.Mutex
-	maxTokens float64
+	limiters   map[string]*RateLimiter
+	mutex      sync.Mutex
+	maxTokens  float64
 	refillRate float64
 }
 
-
 func NewIPRateLimiter(maxTokens float64, refillRate float64) *IPRateLimiter {
 	return &IPRateLimiter{
-		limiters: make(map[string]*RateLimiter),
-		maxTokens: maxTokens,
+		limiters:   make(map[string]*RateLimiter),
+		maxTokens:  maxTokens,
 		refillRate: refillRate,
 	}
 }

@@ -10,9 +10,9 @@ import (
 	"time"
 	// "log"
 	"crypto/rand"
-	"math/big"
-	"github.com/abhinandan-thakur/Artistify/auth-service/internal/database"
 	"github.com/abhinandan-thakur/Artistify/auth-service/internal/config"
+	"github.com/abhinandan-thakur/Artistify/auth-service/internal/database"
+	"math/big"
 )
 
 func GenerateOTP(user models.Users, rdb *redis.Client) (string, error) {
@@ -23,7 +23,7 @@ func GenerateOTP(user models.Users, rdb *redis.Client) (string, error) {
 
 	for i := 0; i < 6; i++ {
 
-		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(digits)),),)
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(digits))))
 
 		if err != nil {
 			return "", err
@@ -31,8 +31,8 @@ func GenerateOTP(user models.Users, rdb *redis.Client) (string, error) {
 		ret[i] = digits[num.Int64()]
 	}
 
-	otp :=  string(ret)
-	cacheKey := "otp:"+user.Email
+	otp := string(ret)
+	cacheKey := "otp:" + user.Email
 
 	err := rdb.Set(database.Ctx, cacheKey, otp, 5*time.Minute).Err()
 	if err != nil {
@@ -92,8 +92,6 @@ func Login(pool *pgxpool.Pool, input models.Users) (string, string, error) {
 		return "", "", err
 	}
 
-
-
 	expires := time.Now().Add(time.Hour)
 	claims := jwt.MapClaims{
 		"id":   user.ID,
@@ -110,4 +108,3 @@ func Login(pool *pgxpool.Pool, input models.Users) (string, string, error) {
 
 	return tokenString, user.Type, nil
 }
-

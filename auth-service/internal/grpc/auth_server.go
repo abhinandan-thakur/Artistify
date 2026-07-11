@@ -2,16 +2,15 @@ package grpc
 
 import (
 	"context"
+	"github.com/abhinandan-thakur/Artistify/auth-service/internal/config"
 	pb "github.com/abhinandan-thakur/Artistify/auth-service/proto"
 	"github.com/golang-jwt/jwt/v5"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	"log"
-	"github.com/abhinandan-thakur/Artistify/auth-service/internal/config"
-
+	// "log"
 )
 
-type AuthServer struct{
+type AuthServer struct {
 	pb.UnimplementedAuthenticateServiceServer
 	Config *config.Config
 }
@@ -25,10 +24,10 @@ func (server *AuthServer) GetRole(ctx context.Context, request *pb.GetRoleReques
 func (server *AuthServer) IsValidAndGetRole(ctx context.Context, request *pb.IsValidAndGetRoleRequest) (*pb.IsValidAndGetRoleResponse, error) {
 
 	jwtSecret := []byte(server.Config.JWTSecret)
-	log.Println("The jwt secre")
+	// log.Println("The jwt secre")
 
 	tokenString := request.TokenString
-	log.Println("the jwt secret is:", jwtSecret)
+	// log.Println("the jwt secret is:", jwtSecret)
 	claims := jwt.MapClaims{}
 
 	token, err := jwt.ParseWithClaims(
@@ -42,24 +41,24 @@ func (server *AuthServer) IsValidAndGetRole(ctx context.Context, request *pb.IsV
 		},
 	)
 
-	log.Println("The token is:", token)
+	// log.Println("The token is:", token)
 
 	if err != nil || !token.Valid {
 		return &pb.IsValidAndGetRoleResponse{
 			Valid: false,
-			Role: "user",
+			Role:  "user",
 		}, nil
 	}
 
 	claims = token.Claims.(jwt.MapClaims)
 
-	log.Println("The claim is:", claims)
+	// log.Println("The claim is:", claims)
 
 	role, _ := claims["role"].(string)
 
 	return &pb.IsValidAndGetRoleResponse{
 		Valid: true,
-		Role: role,
+		Role:  role,
 	}, nil
 
 }

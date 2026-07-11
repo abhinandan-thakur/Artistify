@@ -2,8 +2,8 @@ package database
 
 import (
 	"context"
-	"github.com/redis/go-redis/v9"
 	"github.com/abhinandan-thakur/Artistify/auth-service/internal/config"
+	"github.com/redis/go-redis/v9"
 	"log"
 )
 

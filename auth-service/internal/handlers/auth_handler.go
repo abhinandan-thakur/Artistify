@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	grpc "github.com/abhinandan-thakur/Artistify/auth-service/internal/grpc"
 	"github.com/abhinandan-thakur/Artistify/auth-service/internal/models"
 	"github.com/abhinandan-thakur/Artistify/auth-service/internal/service"
 	"github.com/gin-gonic/gin"
@@ -8,26 +9,24 @@ import (
 	"github.com/redis/go-redis/v9"
 	"net/http"
 	"time"
-	grpc "github.com/abhinandan-thakur/Artistify/auth-service/internal/grpc"
-	
 )
 
 type RegisterResponse struct {
-	Message string `json:"message"`
-	UserID int `json:"user_id"`
+	Message   string    `json:"message"`
+	UserID    int       `json:"user_id"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
 type RegisterWithRoleResponse struct {
-	Message string `json:"message"`
-	UserID int `json:"user_id"`
+	Message   string    `json:"message"`
+	UserID    int       `json:"user_id"`
 	CreatedAt time.Time `json:"created_at"`
-	Role string `json:"role"`
+	Role      string    `json:"role"`
 }
 
 type LoginResponse struct {
 	Token string `json:"token"`
-	Role string `json:"role"`
+	Role  string `json:"role"`
 }
 
 type SendOTPResponse struct {
@@ -116,7 +115,7 @@ func RegisterWithRole(pool *pgxpool.Pool) gin.HandlerFunc {
 			"message":    "User Registered",
 			"User id":    user.ID,
 			"Created at": user.CreatedAt,
-			"Role":     user.Type,
+			"Role":       user.Type,
 		})
 	}
 
@@ -190,16 +189,16 @@ func SendOTP(pool *pgxpool.Pool, rdb *redis.Client, mailingClient *grpc.MailingC
 		otp, err := service.GenerateOTP(user, rdb)
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error":err.Error(),},)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		
+
 		err = mailingClient.SendMail(user.Email, otp)
 
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error":err.Error(),},)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 			return
 		}
-		c.JSON(http.StatusAccepted, gin.H{"message": "otp queued"},)
+		c.JSON(http.StatusAccepted, gin.H{"message": "otp queued"})
 	}
 }

@@ -5,22 +5,22 @@
 package main
 
 import (
+	"fmt"
+	"github.com/abhinandan-thakur/Artistify/auth-service/internal/config"
 	"github.com/abhinandan-thakur/Artistify/auth-service/internal/database"
+	grpc "github.com/abhinandan-thakur/Artistify/auth-service/internal/grpc"
 	"github.com/abhinandan-thakur/Artistify/auth-service/internal/handlers"
 	"github.com/abhinandan-thakur/Artistify/auth-service/internal/middleware"
-	"fmt"
-	"log"
-	"os"
-	grpc "github.com/abhinandan-thakur/Artistify/auth-service/internal/grpc"
 	"github.com/gin-gonic/gin"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"github.com/abhinandan-thakur/Artistify/auth-service/internal/config"
-	
-    swaggerFiles "github.com/swaggo/files"
-    ginSwagger "github.com/swaggo/gin-swagger"
+	"log"
+	"os"
 
-    _ "github.com/abhinandan-thakur/Artistify/auth-service/docs"
+	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
+
+	_ "github.com/abhinandan-thakur/Artistify/auth-service/docs"
 )
 
 var pool *pgxpool.Pool
@@ -32,7 +32,7 @@ func main() {
 	config := config.LoadConfig()
 	fmt.Println("The environment is:", config.AppEnv)
 	fmt.Println("The JWT secret is:", config.JWTSecret)
-	fmt.Println("The rate_limit_login is:", config.LoginRateLimit ,"==",config.LoginRateRefil)
+	fmt.Println("The rate_limit_login is:", config.LoginRateLimit, "==", config.LoginRateRefil)
 	fmt.Println("The reigster is:", config.RegisterRateLimit, "==", config.ReigsterRateRefil)
 	fmt.Println("The admin is:", config.AdminRateLimit, "==", config.AdminRateRefil)
 
@@ -54,7 +54,6 @@ func main() {
 		log.Fatal(err)
 		panic(err)
 	}
-
 
 	fmt.Println("Started GRPC auth server")
 
@@ -83,11 +82,10 @@ func main() {
 	router.POST("/auth/register", middleware.RateLimitMiddleware(registerRateLimiter), handlers.Register(pool))
 	router.POST("/auth/registerWithRole", middleware.RateLimitMiddleware(adminRateLimiter), handlers.RegisterWithRole(pool))
 
-	port := ":"+os.Getenv("URL_PORT")
+	port := ":" + os.Getenv("URL_PORT")
 	err = router.Run(port)
-	log.Println("Auth Service running at "+os.Getenv("URL_PORT"))
+	log.Println("Auth Service running at " + os.Getenv("URL_PORT"))
 	if err != nil {
 		log.Fatal(err)
 	}
 }
-

@@ -1,8 +1,8 @@
 package repository
 
 import (
-	"github.com/abhinandan-thakur/Artistify/auth-service/internal/models"
 	"context"
+	"github.com/abhinandan-thakur/Artistify/auth-service/internal/models"
 	"github.com/jackc/pgx/v5/pgxpool"
 	"log"
 )
@@ -64,7 +64,6 @@ func Login(pool *pgxpool.Pool, user models.Users) (models.Users, error) {
 	if err != nil {
 		return models.Users{}, err
 	}
-
 
 	return user, nil
 }
