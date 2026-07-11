@@ -19,13 +19,18 @@ var pool *pgxpool.Pool
 func main() {
 
 	config := config.LoadConfig()
+	fmt.Println("The environment is:", config.AppEnv)
+	fmt.Println("The JWT secret is:", config.JWTSecret)
+	fmt.Println("The get_limit_login is:", config.GetRateLimit ,"==",config.GetRateRefill)
+	fmt.Println("The post is:", config.PostRateLimit, "==", config.PostRateRefill)
+	fmt.Println("The delete is:", config.DeleteRateLimit, "==", config.DeleteRateRefill)
 
 	var err error
 
 	pool, err = database.ConnectDB(config)
 	redisClient := database.ConnectRedis(config)
 
-	authClient := grpcclient.NewAuthClient()
+	authClient := grpcclient.NewAuthClient(config)
 
 	if err != nil {
 		log.Fatal(err)
@@ -41,10 +46,10 @@ func main() {
 
 	router.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
-	getRateLimiter    := middleware.NewIPHash(50.00, 3.00)
-	postRateLimiter	  := middleware.NewIPHash(3.00, 0.50)
-	deleteRateLimiter := middleware.NewIPHash(1.00, 0.20)
-	putRateLimiter	  := middleware.NewIPHash(4.00, 0.60)
+	getRateLimiter    := middleware.NewIPHash(config.GetRateLimit, config.GetRateRefill)
+	postRateLimiter	  := middleware.NewIPHash(config.PostRateLimit, config.PostRateRefill)
+	deleteRateLimiter := middleware.NewIPHash(config.DeleteRateLimit, config.DeleteRateRefill)
+	putRateLimiter	  := middleware.NewIPHash(config.PutRateLimit, config.PutRateRefill)
 
 	router.GET("/albums", middleware.RateLimitingMiddleware(getRateLimiter), handlers.GetAlbums(pool, redisClient))
 	router.GET("/albums/artist/:artist", middleware.RateLimitingMiddleware(getRateLimiter), handlers.GetAlbumsByArtist(pool))

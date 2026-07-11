@@ -15,11 +15,11 @@ func StartGRPCServer(config *config.Config) error {
 
 	grpcServer := grpc.NewServer()
 
-	authServer := &AuthServer{}
+	authServer := &AuthServer{Config: config}
 
 	pb.RegisterAuthenticateServiceServer(grpcServer, authServer)
 
-	listener, err := net.Listen(config.GRPCHost, ":"+config.GRPCPort)
+	listener, err := net.Listen("tcp", ":"+config.GRPCPort)
 
 	if err != nil {	return err}
 

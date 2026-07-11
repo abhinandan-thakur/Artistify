@@ -11,8 +11,11 @@ services:
     ports:
       - "5433:5432"
 
+    restart: unless-stopped
+
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./database/init:/docker-entrypoint-initdb.d
 
   redis:
     image: redis:8
@@ -20,6 +23,8 @@ services:
 
     ports:
       - "6380:6379"
+
+    restart: unless-stopped
 
   auth-service:
     build: 
@@ -29,6 +34,8 @@ services:
     ports:
       - "8180:8180"
       - "50051:50051"
+
+    restart: unless-stopped
 
     depends_on:
       - postgres
@@ -52,7 +59,9 @@ services:
     container_name: music-service
 
     ports:
-      - "8080:8080"
+      - "8081:8080"
+    
+    restart: unless-stopped
 
     depends_on:
       - auth-service
@@ -70,6 +79,22 @@ services:
 
       REDIS_HOST: redis
       REDIS_PORT: 6379
+  
+  notification-service:
+    build:
+      context: ./notification-service
+      dockerfile: Dockerfile
+    container_name: notification-service
+    restart: unless-stopped
+    depends_on:
+      - auth-service
+      - redis
+    env_file:
+      - ./notification-service/.env.compose
+    environment:
+      APP_ENV: compose
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
 
   prometheus:
     image: prom/prometheus
@@ -77,6 +102,8 @@ services:
 
     ports:
       - "9090:9090"
+
+    restart: unless-stopped
     
     depends_on:
       - auth-service
@@ -92,8 +119,25 @@ services:
     ports:
       - "3000:3000"
 
+    restart: unless-stopped
+
     depends_on:
       - prometheus
+
+  k6:
+    image: grafana/k6
+    container_name: artistify-k6
+
+    depends_on:
+      - auth-service
+      - music-service
+
+    volumes:
+      - ./tests/k6:/scripts
+
+    command:
+      - run
+      - /scripts/load.js
  
 volumes:
   postgres_data:

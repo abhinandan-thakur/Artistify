@@ -1,3 +1,15 @@
+
+# P95 and P99
+
+```bash
+histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+```
+
+```bash
+histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
+)
+```
+
 # LOCAL BUILD RUN
 
 make sure to start postegressql and redis server before...

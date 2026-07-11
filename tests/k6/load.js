@@ -1,58 +1,104 @@
 import http from 'k6/http';
-import { check } from 'k6';
+import { check, sleep } from 'k6';
 
-const HOST = __ENV.URL_HOST || 'localhost';
-const PORT = __ENV.URL_PORT || '8080';
-
-const BASE_URL = `http://${HOST}:${PORT}`;
+const AUTH_URL = 'http://auth-service:8180';
+const ALBUM_URL = 'http://music-service:8080';
 
 export const options = {
   stages: [
     { duration: '10s', target: 2 },
-    // { duration: '10s', target: 10 },
+    { duration: '10s', target: 10 },
     { duration: '10s', target: 0 },
   ],
 };
 
 export function setup() {
-  const loginPayload = JSON.stringify({
+  const payload = JSON.stringify({
     email: __ENV.TEST_EMAIL || 'root',
     password: __ENV.TEST_PASSWORD || 'targaryen',
   });
 
-  const loginHeaders = {
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  };
-
-  const loginResponse = http.post(
-    `${BASE_URL}/auth/login`,
-    loginPayload,
-    loginHeaders
+  const res = http.post(
+    `${AUTH_URL}/auth/login`,
+    payload,
+    {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      timeout: '10s',
+    }
   );
 
-  console.log(loginResponse.status);
-  console.log(loginResponse.body);
+  check(res, {
+    'login success':
+      (r) =>
+        r.status === 200 ||
+        r.status === 201,
+  });
 
-  const token = loginResponse.json('token');
+  if (
+    res.status !== 200 &&
+    res.status !== 201
+  ) {
+    console.log(res.body);
+    throw new Error('Login failed');
+  }
 
-  return { token };
+  const body = res.json();
+
+console.log(
+  'LOGIN RESPONSE:',
+  JSON.stringify(body)
+);
+
+console.log(
+  'TOKEN:',
+  body.token
+);
+
+return {
+  token: body.token,
+};
+
+  return {
+    token: res.json('token'),
+  };
 }
 
 export default function (data) {
-  const headers = {
+  const params = {
     headers: {
-      Authorization: `Bearer ${data.token}`,
-      'Content-Type': 'application/json',
+      Authorization:
+        `Bearer ${data.token}`,
+      'Content-Type':
+        'application/json',
     },
+    timeout: '10s',
   };
 
-  const res = http.get(`${BASE_URL}/albums`);
+  console.log('GET /albums');
 
-  check(res, {
-    'albums status is 200': (r) => r.status === 200,
+  const albumsRes = http.get(
+    `${ALBUM_URL}/albums`,
+    {
+      ...params,
+      tags: {
+        name: 'get_albums',
+      },
+    }
+  );
+
+  console.log(
+    '/albums:',
+    albumsRes.status
+  );
+
+  check(albumsRes, {
+    'albums status 200':
+      (r) => r.status === 200,
   });
+
+  sleep(Math.random() * 2);
 
   const payload = JSON.stringify({
     album_name: 'Dummy',
@@ -61,36 +107,72 @@ export default function (data) {
     rating: 9.2,
   });
 
-  const postRes = http.post(
-    `${BASE_URL}/admin/albums`,
-    payload,
-    headers
+  console.log(
+    'POST /admin/albums'
   );
 
-  check(postRes, {
-    'album created': (r) =>
-      r.status === 200 || r.status === 201,
+  const createRes = http.post(
+    `${ALBUM_URL}/admin/albums`,
+    payload,
+    {
+      ...params,
+      tags: {
+        name: 'create_album',
+      },
+    }
+  );
+
+  console.log(
+    'POST:',
+    createRes.status
+  );
+
+  check(createRes, {
+    'album created':
+      (r) =>
+        r.status === 200 ||
+        r.status === 201,
   });
 
-  if (postRes.status !== 200 &&
-      postRes.status !== 201) {
-    console.log(postRes.body);
+  if (
+    createRes.status !== 200 &&
+    createRes.status !== 201
+  ) {
+    console.log(createRes.body);
     return;
   }
 
-  const albumId = postRes.json().id;
+  sleep(Math.random() * 3);
+
+  const albumId =
+    createRes.json('id');
+
+  console.log(
+    'DELETE /admin/albums'
+  );
 
   const delRes = http.del(
-    `${BASE_URL}/admin/albums/${albumId}`,
+    `${ALBUM_URL}/admin/albums/${albumId}`,
     null,
-    headers
+    {
+      ...params,
+      tags: {
+        name: 'delete_album',
+      },
+    }
+  );
+
+  console.log(
+    'DELETE:',
+    delRes.status
   );
 
   check(delRes, {
-    'album deleted': (r) =>
-      r.status === 200 || r.status === 204,
+    'album deleted':
+      (r) =>
+        r.status === 200 ||
+        r.status === 204,
   });
 
-  console.log(delRes.status);
-console.log(delRes.body);
+  sleep(Math.random() * 2);
 }

@@ -5,10 +5,41 @@ import (
 	"github.com/abhinandan-thakur/Artistify/auth-service/internal/repository"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/redis/go-redis/v9"
 	"golang.org/x/crypto/bcrypt"
 	"time"
-	"log"
+	// "log"
+	"crypto/rand"
+	"math/big"
+	"github.com/abhinandan-thakur/Artistify/auth-service/internal/database"
+	"github.com/abhinandan-thakur/Artistify/auth-service/internal/config"
 )
+
+func GenerateOTP(user models.Users, rdb *redis.Client) (string, error) {
+
+	const digits = "0123456789"
+
+	ret := make([]byte, 6)
+
+	for i := 0; i < 6; i++ {
+
+		num, err := rand.Int(rand.Reader, big.NewInt(int64(len(digits)),),)
+
+		if err != nil {
+			return "", err
+		}
+		ret[i] = digits[num.Int64()]
+	}
+
+	otp :=  string(ret)
+	cacheKey := "otp:"+user.Email
+
+	err := rdb.Set(database.Ctx, cacheKey, otp, 5*time.Minute).Err()
+	if err != nil {
+		return "", err
+	}
+	return otp, nil
+}
 
 func Register(pool *pgxpool.Pool, user models.Users) (models.Users, error) {
 
@@ -49,17 +80,14 @@ func RegisterWithRole(pool *pgxpool.Pool, user models.Users) (models.Users, erro
 }
 
 func Login(pool *pgxpool.Pool, input models.Users) (string, string, error) {
-	log.Println("Entered Service Login")
+	config := config.LoadConfig()
 	user, err := repository.Login(pool, input)
-	log.Println("Exit from Repository Login")
-
 	if err != nil {
 		return "", "", err
 	}
 
 	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password))
 
-	log.Println("what is the error in compareHash and Password", err)
 	if err != nil {
 		return "", "", err
 	}
@@ -74,10 +102,7 @@ func Login(pool *pgxpool.Pool, input models.Users) (string, string, error) {
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	tokenString, err := token.SignedString([]byte("super-secret-key"))
-
-	log.Println("what is the error in service", err)
-
+	tokenString, err := token.SignedString([]byte(config.JWTSecret))
 
 	if err != nil {
 		return "", "", err
@@ -85,3 +110,4 @@ func Login(pool *pgxpool.Pool, input models.Users) (string, string, error) {
 
 	return tokenString, user.Type, nil
 }
+
