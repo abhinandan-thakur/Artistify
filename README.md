@@ -1,63 +1,16 @@
-# Artistify 🎵
 
-A backend music platform API built with **Go**, designed around a **microservices architecture**. Artistify supports JWT authentication, role-based access control (RBAC), album/music management, Redis caching, rate limiting, and full observability via Prometheus and Grafana.
+# P95 and P99
 
-> 🚧 This project is actively being built to learn and explore backend engineering concepts, scalable API design, and microservices patterns.
+```bash
+histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))
+```
 
----
+```bash
+histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket[5m])) by (le)
+)
+```
 
-## Table of Contents
-
-- [Architecture](#architecture)
-- [Features](#features)
-- [Tech Stack](#tech-stack)
-- [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Run with Docker (Recommended)](#run-with-docker-recommended)
-  - [Run Locally](#run-locally)
-- [Environment Variables](#environment-variables)
-- [API Endpoints](#api-endpoints)
-- [Monitoring](#monitoring)
-- [Load Testing](#load-testing)
-
----
-
-## Architecture
-
-Artistify follows a **microservices** pattern with the following services:
-
-| Service                | Description                                               | Port(s)          |
-|------------------------|-----------------------------------------------------------|------------------|
-| `auth-service`         | Handles user registration, login, and JWT issuance        | HTTP: 8180, gRPC: 50051 |
-| `music-service`        | Manages albums, tracks, and music catalog operations      | HTTP: 8080       |
-| `notification-service` | Handles email/notification delivery                       | —                |
-| `prometheus`           | Metrics collection from all services                      | 9090             |
-| `grafana`              | Metrics visualization dashboards                          | 3000             |
-
-Services communicate internally via **gRPC** (defined in `/proto`). PostgreSQL is the primary datastore, with Redis used for caching.
-
----
-
-## Features
-
-- **JWT Authentication** — Secure token-based auth with configurable secrets
-- **Role-Based Access Control (RBAC)** — Fine-grained permissions per user role
-- **Microservices Architecture** — Independently deployable services with gRPC inter-service communication
-- **REST API with Gin** — Fast and lightweight HTTP routing
-- **PostgreSQL Integration** — Persistent data storage via `pgx/v5`
-- **Redis Caching** — Response caching to reduce DB load
-- **Rate Limiting Middleware** — Protect endpoints from abuse
-- **Album / Music CRUD** — Full create, read, update, and delete for the music catalog
-- **Prometheus Metrics** — Instrumented endpoints with `prometheus/client_golang`
-- **Grafana Dashboards** — Visualise service health and request metrics
-- **k6 Load Testing** — Performance test scripts in `/tests/k6`
-- **GitHub Actions CI/CD** — Automated build and deployment pipeline
-- **Docker Compose** — One-command local environment setup
-
----
-
-## Tech Stack
+# LOCAL BUILD RUN
 
 | Layer          | Technology                              |
 |----------------|-----------------------------------------|

@@ -1,0 +1,177 @@
+definitions:
+  handlers.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  handlers.LoginResponse:
+    properties:
+      role:
+        type: string
+      token:
+        type: string
+    type: object
+  handlers.RegisterResponse:
+    properties:
+      created_at:
+        type: string
+      message:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  handlers.RegisterWithRoleResponse:
+    properties:
+      created_at:
+        type: string
+      message:
+        type: string
+      role:
+        type: string
+      user_id:
+        type: integer
+    type: object
+  handlers.SendOTPResponse:
+    properties:
+      message:
+        type: string
+    type: object
+  models.Users:
+    properties:
+      created_at:
+        type: string
+      email:
+        type: string
+      id:
+        type: integer
+      password:
+        type: string
+      type:
+        type: string
+      username:
+        type: string
+    type: object
+host: localhost:8180
+info:
+  contact: {}
+  description: authentication service for Artistify app
+  title: Authentication Service
+  version: "1.0"
+paths:
+  /auth/login:
+    post:
+      consumes:
+      - application/json
+      description: Authenticate a user and return JWT tokens.
+      parameters:
+      - description: Login User
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.Users'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/handlers.LoginResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Login
+      tags:
+      - Authentication
+  /auth/register:
+    post:
+      consumes:
+      - application/json
+      description: Registers the user into the database
+      parameters:
+      - description: Register User
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.Users'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handlers.RegisterResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Register
+      tags:
+      - Authentication
+  /auth/registerWithRole:
+    post:
+      consumes:
+      - application/json
+      description: Registers the user also accepts role as a json field
+      parameters:
+      - description: RegisterWithRole User
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.Users'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/handlers.RegisterWithRoleResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Register the user and also let them select the role
+      tags:
+      - Authentication
+  /auth/sendOTP:
+    post:
+      consumes:
+      - application/json
+      description: hashes a secure random otp and sends a mail to the json input field
+      parameters:
+      - description: Send otp Request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/models.Users'
+      produces:
+      - application/json
+      responses:
+        "202":
+          description: Accepted
+          schema:
+            $ref: '#/definitions/handlers.SendOTPResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/handlers.ErrorResponse'
+      summary: Send otp
+      tags:
+      - Authentication
+swagger: "2.0"

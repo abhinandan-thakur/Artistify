@@ -25,6 +25,7 @@ func (server *AuthServer) GetRole(ctx context.Context, request *pb.GetRoleReques
 func (server *AuthServer) IsValidAndGetRole(ctx context.Context, request *pb.IsValidAndGetRoleRequest) (*pb.IsValidAndGetRoleResponse, error) {
 
 	jwtSecret := []byte(server.Config.JWTSecret)
+	log.Println("The jwt secre")
 
 	tokenString := request.TokenString
 	log.Println("the jwt secret is:", jwtSecret)
@@ -41,6 +42,8 @@ func (server *AuthServer) IsValidAndGetRole(ctx context.Context, request *pb.IsV
 		},
 	)
 
+	log.Println("The token is:", token)
+
 	if err != nil || !token.Valid {
 		return &pb.IsValidAndGetRoleResponse{
 			Valid: false,
@@ -49,6 +52,8 @@ func (server *AuthServer) IsValidAndGetRole(ctx context.Context, request *pb.IsV
 	}
 
 	claims = token.Claims.(jwt.MapClaims)
+
+	log.Println("The claim is:", claims)
 
 	role, _ := claims["role"].(string)
 

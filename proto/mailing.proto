@@ -1,0 +1,19 @@
+syntax = 'proto3';
+
+option go_package="proto/";
+
+package mailing;
+
+service MailingService {
+    rpc SendMail(MailingServiceRequest) returns (MailingServiceResponse);
+}
+
+message MailingServiceRequest {
+    string receiverEmail = 1;
+    string otp = 2;
+}
+
+message MailingServiceResponse {
+    bool succes = 1;
+    string response = 2;
+}

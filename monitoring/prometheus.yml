@@ -2,9 +2,24 @@ global:
   scrape_interval: 5s
 
 scrape_configs:
-  - job_name: "artistify"
+  - job_name: "auth-service"
 
     metrics_path: /metrics
 
     static_configs:
-      - targets: ["172.27.242.219:8080"]
+      - targets:
+          - "auth-service:8180"
+
+  - job_name: "music-service"
+
+    metrics_path: /metrics
+
+    static_configs:
+      - targets:
+          - "music-service:8080"
+
+  - job_name: "prometheus"
+
+    static_configs:
+      - targets:
+          - "prometheus:9090"
